@@ -6,6 +6,7 @@ const sprites = [];
 const assetsToLoad = [];
 const missiles = [];
 const aliens = [];
+const messages = [];
 
 const background = Object.create(spriteObject);
 background.x = 0;
@@ -22,10 +23,41 @@ cannon.x = canvas.width / 2 - cannon.width / 2;
 cannon.y = 280;
 sprites.push(cannon);
 
+const scoreDisplay = Object.create(messageObject);
+scoreDisplay.font = 'normal bold 30px emulogic';
+scoreDisplay.fillStyle = '#00FF00';
+scoreDisplay.x = 400;
+scoreDisplay.y = 10;
+messages.push(scoreDisplay);
+
+const gameOverMessage = Object.create(messageObject);
+gameOverMessage.font = 'normal bold 20px emulogic';
+gameOverMessage.fillStyle = '#00FF00';
+gameOverMessage.x = 70;
+gameOverMessage.y = 120;
+gameOverMessage.visible = false;
+messages.push(gameOverMessage);
+
 const image = new Image();
 image.addEventListener('load', loadHandler, false);
 image.src = '../images/alienArmada.png';
 assetsToLoad.push(image);
+
+// Load sounds
+const music = document.getElementById('music');
+music.addEventListener('canplaythrough', loadHandler, false);
+music.load();
+assetsToLoad.push(music);
+
+const shootSound = document.getElementById('shootSound');
+shootSound.addEventListener('canplaythrough', loadHandler, false);
+shootSound.load();
+assetsToLoad.push(shootSound);
+
+const explosionSound = document.getElementById('explosionSound');
+explosionSound.addEventListener('canplaythrough', loadHandler, false);
+explosionSound.load();
+assetsToLoad.push(explosionSound);
 
 let assetsLoaded = 0;
 
@@ -47,6 +79,9 @@ let moveLeft = false;
 let shoot = false;
 let spaceKeyIsDown = false;
 
+// Game Variables
+let score = 0;
+let scoreNeededToWin = 60;
 let alienFrequency = 100;
 let alienTimer = 0;
 
@@ -131,17 +166,24 @@ function loadHandler() {
   assetsLoaded++;
   if (assetsLoaded === assetsToLoad.length) {
     image.removeEventListener('load', loadHandler, false);
+    music.removeEventListener('canplaythrough', loadHandler, false);
+    shootSound.removeEventListener('canplaythrough', loadHandler, false);
+    explosionSound.removeEventListener('canplaythrough', loadHandler, false);
+    console.log(assetsLoaded);
+
+    music.play();
+    music.volume = 0.3;
     gameState = PLAYING;
   }
 }
 
 function playGame() {
   if (moveLeft && !moveRight) {
-    cannon.vx = -8;
+    cannon.vx = -6;
   }
 
   if (!moveLeft && moveRight) {
-    cannon.vx = 8;
+    cannon.vx = 6;
   }
 
   if (!moveLeft && !moveRight) {
@@ -195,6 +237,45 @@ function playGame() {
       gameState = OVER;
     }
   }
+
+  for (let i = 0; i < aliens.length; i++) {
+    const alien = aliens[i];
+
+    for (let j = 0; j < missiles.length; j++) {
+      const missile = missiles[j];
+
+      if (hitTestRectangle(missile, alien) && alien.state === alien.NORMAL) {
+        destroyAlien(alien);
+        score++;
+
+        removeObject(missile, missiles);
+        removeObject(missile, sprites);
+
+        j--;
+      }
+    }
+  }
+
+  scoreDisplay.text = score;
+
+  if (score === scoreNeededToWin) {
+    gameState = OVER;
+  }
+}
+
+function destroyAlien(alien) {
+  alien.state = alien.EXPLODED;
+  alien.update();
+
+  setTimeout(removeAlien, 1000);
+
+  explosionSound.currentTime = 0;
+  explosionSound.play();
+
+  function removeAlien() {
+    removeObject(alien, aliens);
+    removeObject(alien, sprites);
+  }
 }
 
 function makeAlien() {
@@ -208,7 +289,7 @@ function makeAlien() {
   // const randomPosition = Math.floor(Math.random() * (canvas.width / alien.width))
   alien.x = randomPosition * alien.width;
 
-  alien.vy = 0.1;
+  alien.vy = 0.5;
 
   sprites.push(alien);
   aliens.push(alien);
@@ -228,6 +309,9 @@ function fireMissile() {
   missile.vy = -8;
   sprites.push(missile);
   missiles.push(missile);
+
+  shootSound.currentTime = 0;
+  shootSound.play();
 }
 
 function removeObject(objectToRemove, array) {
@@ -238,7 +322,13 @@ function removeObject(objectToRemove, array) {
 }
 
 function endGame() {
-  console.log('GAME OVER');
+  gameOverMessage.visible = true;
+  if (score < scoreNeededToWin) {
+    gameOverMessage.text = 'EARTH DESTROYED';
+  } else {
+    gameOverMessage.x = 120;
+    gameOverMessage.text = 'EARTH SAVED';
+  }
 }
 
 function render() {
@@ -259,6 +349,18 @@ function render() {
         sprite.width,
         sprite.height,
       );
+    }
+  }
+
+  if (messages.length) {
+    for (let i = 0; i < messages.length; i++) {
+      const message = messages[i];
+      if (message.visible) {
+        context.font = message.font;
+        context.fillStyle = message.fillStyle;
+        context.textBaseline = message.textBaseline;
+        context.fillText(message.text, message.x, message.y);
+      }
     }
   }
 }
