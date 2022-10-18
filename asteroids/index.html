@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Animation</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="drawing.js"></script>
+    <script src="mass.js"></script>
+    <script src="asteroid.js"></script>
+    <script src="projectile.js"></script>
+    <script src="ship.js"></script>
+    <script src="pacman.js"></script>
+    <script src="ghost.js"></script>
+    <script src="indicator.js"></script>
+    <script src="game.js"></script>
+  </head>
+
+  <body>
+    <h1>Asteroids</h1>
+    <canvas id="asteroids" width="600" height="600" tabindex="1"></canvas>
+
+    <script>
+      const game = new AsteroidGame('asteroids');
+    </script>
+  </body>
+</html>
